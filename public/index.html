@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="借入額・年利・返済期間から毎月の返済額、総利息、返済予定表を計算するJava製ローン返済シミュレーターです。">
+  <title>ローン返済シミュレーター</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/style.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">本文へ移動</a>
+
+  <header class="site-header">
+    <div class="shell header-inner">
+      <a class="brand" href="/" aria-label="ローン返済シミュレーター ホーム">
+        <span class="brand-mark" aria-hidden="true">¥</span>
+        <span>返済プラン</span>
+      </a>
+      <span class="privacy-note"><span aria-hidden="true">●</span> 入力内容は保存されません</span>
+    </div>
+  </header>
+
+  <main id="main" class="shell">
+    <section class="intro" aria-labelledby="page-title">
+      <div>
+        <p class="eyebrow">LOAN PAYMENT SIMULATOR</p>
+        <h1 id="page-title">返済額を、<br><span>わかりやすく見通す。</span></h1>
+        <p class="lead">借入額・年利・返済期間を入力すると、毎月の返済額と利息、完済までの予定を円単位で概算します。</p>
+      </div>
+      <div class="intro-badges" aria-label="このサービスの特徴">
+        <span><b aria-hidden="true">✓</b> 元利均等・元金均等</span>
+        <span><b aria-hidden="true">✓</b> 返済予定表を作成</span>
+        <span><b aria-hidden="true">✓</b> 登録不要</span>
+      </div>
+    </section>
+
+    <div class="calculator-layout">
+      <section class="card input-card" aria-labelledby="conditions-heading">
+        <div class="card-heading">
+          <span class="step-number" aria-hidden="true">1</span>
+          <div>
+            <p class="section-kicker">計算条件</p>
+            <h2 id="conditions-heading">借入条件を入力</h2>
+          </div>
+        </div>
+
+        <form id="loan-form" novalidate>
+          <div id="form-error" class="alert" role="alert" hidden></div>
+
+          <div class="field-group">
+            <label for="principal">借入額</label>
+            <div class="input-with-unit">
+              <input id="principal" name="principal" type="number" inputmode="numeric"
+                     min="1" max="1000000000000" step="1" value="3000000"
+                     aria-describedby="principal-hint principal-error" required>
+              <span class="unit">円</span>
+            </div>
+            <p id="principal-hint" class="field-hint">1円〜1兆円・1円単位</p>
+            <p id="principal-error" class="field-error" hidden></p>
+            <div class="presets" aria-label="借入額の例">
+              <button type="button" data-amount="1000000">100万円</button>
+              <button type="button" data-amount="3000000">300万円</button>
+              <button type="button" data-amount="10000000">1,000万円</button>
+            </div>
+          </div>
+
+          <div class="field-group">
+            <label for="annual-rate">年利</label>
+            <div class="input-with-unit short-input">
+              <input id="annual-rate" name="annualRate" type="number" inputmode="decimal"
+                     min="0" max="100" step="0.01" value="2.5"
+                     aria-describedby="annual-rate-hint annual-rate-error" required>
+              <span class="unit">%</span>
+            </div>
+            <p id="annual-rate-hint" class="field-hint">0〜100%・0%にも対応</p>
+            <p id="annual-rate-error" class="field-error" hidden></p>
+          </div>
+
+          <fieldset class="field-group duration-group">
+            <legend>返済期間</legend>
+            <div class="duration-inputs">
+              <div class="input-with-unit">
+                <label class="sr-only" for="term-years">返済期間の年数</label>
+                <input id="term-years" type="number" inputmode="numeric" min="0" max="50" step="1" value="10"
+                       aria-describedby="duration-hint duration-error">
+                <span class="unit">年</span>
+              </div>
+              <div class="input-with-unit">
+                <label class="sr-only" for="term-months">返済期間の追加月数</label>
+                <input id="term-months" type="number" inputmode="numeric" min="0" max="11" step="1" value="0"
+                       aria-describedby="duration-hint duration-error">
+                <span class="unit">か月</span>
+              </div>
+            </div>
+            <p id="duration-hint" class="field-hint">合計1〜600か月（最長50年）</p>
+            <p id="duration-error" class="field-error" hidden></p>
+          </fieldset>
+
+          <div class="field-group">
+            <label for="first-payment-month">初回支払月</label>
+            <input id="first-payment-month" name="firstPaymentMonth" class="full-input" type="month"
+                   aria-describedby="first-payment-month-error" required>
+            <p id="first-payment-month-error" class="field-error" hidden></p>
+          </div>
+
+          <fieldset class="field-group method-group">
+            <legend>返済方式</legend>
+            <label class="method-option">
+              <input type="radio" name="method" value="equal-payment" checked>
+              <span class="radio-dot" aria-hidden="true"></span>
+              <span>
+                <strong>元利均等</strong>
+                <small>毎月の返済額がほぼ一定</small>
+              </span>
+            </label>
+            <label class="method-option">
+              <input type="radio" name="method" value="equal-principal">
+              <span class="radio-dot" aria-hidden="true"></span>
+              <span>
+                <strong>元金均等</strong>
+                <small>返済額が少しずつ減る</small>
+              </span>
+            </label>
+          </fieldset>
+
+          <div class="form-actions">
+            <button id="calculate-button" class="primary-button" type="submit">
+              <span>返済額を計算する</span>
+              <span aria-hidden="true">→</span>
+            </button>
+            <button id="reset-button" class="text-button" type="button">入力をリセット</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="card results-card" aria-labelledby="results-heading">
+        <div class="card-heading results-title-row">
+          <span class="step-number" aria-hidden="true">2</span>
+          <div>
+            <p class="section-kicker">シミュレーション結果</p>
+            <h2 id="results-heading" tabindex="-1">返済プラン</h2>
+          </div>
+          <span id="stale-badge" class="stale-badge" hidden>再計算が必要です</span>
+        </div>
+
+        <div id="empty-state" class="empty-state">
+          <div class="empty-illustration" aria-hidden="true">
+            <span class="coin coin-one">¥</span>
+            <span class="coin coin-two">¥</span>
+            <span class="chart-line"></span>
+          </div>
+          <h3>条件を入力して計算してください</h3>
+          <p>毎月の返済額、総支払額、利息の内訳と返済予定表がここに表示されます。</p>
+        </div>
+
+        <div id="result-content" class="result-content" hidden aria-live="polite">
+          <div id="result-summary" class="result-hero">
+            <div>
+              <p id="main-payment-label" class="result-label">毎月の返済額（概算）</p>
+              <p id="main-payment" class="main-payment">0 <span>円</span></p>
+              <p id="payment-note" class="payment-note"></p>
+            </div>
+            <div class="method-chip" id="method-chip">元利均等</div>
+          </div>
+
+          <p id="conditions-summary" class="conditions-summary"></p>
+
+          <div class="summary-grid">
+            <div class="summary-item">
+              <span>総支払額</span>
+              <strong id="total-payment">0 円</strong>
+            </div>
+            <div class="summary-item">
+              <span>利息総額</span>
+              <strong id="total-interest">0 円</strong>
+            </div>
+            <div class="summary-item">
+              <span>返済回数</span>
+              <strong id="payment-count">0 回</strong>
+            </div>
+          </div>
+
+          <section class="breakdown-section" aria-labelledby="breakdown-heading">
+            <div class="subsection-heading">
+              <div>
+                <p class="section-kicker">支払いの内訳</p>
+                <h3 id="breakdown-heading">元金と利息</h3>
+              </div>
+              <span id="interest-ratio" class="ratio-label">利息 0%</span>
+            </div>
+            <div class="breakdown-bar" role="img" aria-label="総支払額に占める元金と利息の割合">
+              <span id="principal-bar" class="principal-bar"></span>
+              <span id="interest-bar" class="interest-bar"></span>
+            </div>
+            <div class="breakdown-legend">
+              <span><i class="principal-key"></i> 元金 <b id="principal-legend">0 円</b></span>
+              <span><i class="interest-key"></i> 利息 <b id="interest-legend">0 円</b></span>
+            </div>
+          </section>
+
+          <section class="schedule-section" aria-labelledby="schedule-heading">
+            <div class="subsection-heading schedule-heading-row">
+              <div>
+                <p class="section-kicker">月ごとの明細</p>
+                <h3 id="schedule-heading">返済予定表</h3>
+              </div>
+              <button id="download-button" class="secondary-button" type="button">CSVを保存</button>
+            </div>
+
+            <div class="table-wrap" tabindex="0" aria-label="返済予定表。横にスクロールできます">
+              <table>
+                <caption class="sr-only">月ごとの返済額、元金、利息、返済後残高</caption>
+                <thead>
+                  <tr>
+                    <th scope="col">回</th>
+                    <th scope="col">支払月</th>
+                    <th scope="col">返済額</th>
+                    <th scope="col">元金</th>
+                    <th scope="col">利息</th>
+                    <th scope="col">残高</th>
+                  </tr>
+                </thead>
+                <tbody id="schedule-body"></tbody>
+              </table>
+            </div>
+            <button id="toggle-schedule" class="schedule-toggle" type="button" hidden>すべての明細を表示</button>
+          </section>
+        </div>
+      </section>
+    </div>
+
+    <aside class="notice" aria-labelledby="notice-heading">
+      <span class="notice-icon" aria-hidden="true">i</span>
+      <div>
+        <h2 id="notice-heading">計算結果について</h2>
+        <p>本結果は、月利を「年利 ÷ 12」で計算した概算です。手数料、保証料、日割り利息、ボーナス返済、繰上返済は含みません。実際の返済額や端数処理は金融機関の契約条件をご確認ください。</p>
+      </div>
+    </aside>
+  </main>
+
+  <footer>
+    <div class="shell footer-inner">
+      <p>ローン返済シミュレーター</p>
+      <p>Java・BigDecimalで円単位に計算</p>
+    </div>
+  </footer>
+</body>
+</html>

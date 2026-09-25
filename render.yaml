@@ -1,0 +1,7 @@
+services:
+  - type: web
+    name: bank-installment-calculator
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /healthz
